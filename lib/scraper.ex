@@ -1,6 +1,6 @@
 defmodule Wonk.Scraper do
   use Crawly.Spider
-  @first_ep "https://knowledge-fight.fandom.com/wiki/16:_February_24,_2017"
+  @ep_index "https://knowledge-fight.fandom.com/wiki/Category:Episodes"
 
   @impl Crawly.Spider
   def override_settings do
@@ -19,9 +19,30 @@ defmodule Wonk.Scraper do
   def base_url(), do: "https://knowledge-fight.fandom.com"
 
   @impl Crawly.Spider
-  def init(), do: [start_urls: [@first_ep]]
+  def init(), do: [start_urls: [@ep_index]]
 
   @impl Crawly.Spider
+  def parse_item(%{request_url: @ep_index <> _rest} = response) do
+    {:ok, document} = Floki.parse_document(response.body)
+
+    episode_links =
+      document
+      |> Floki.find("li.category-page__member a")
+      |> Enum.filter(&is_episode?/1)
+      |> Enum.map(&href_from_link/1)
+      |> Crawly.Utils.build_absolute_urls(response.request.url)
+      |> Crawly.Utils.requests_from_urls()
+
+    next_page =
+      document
+      |> Floki.find("a.category-page__pagination-next")
+      |> Floki.attribute("href")
+      |> Enum.at(0)
+      |> Crawly.Utils.request_from_url()
+
+    %Crawly.ParsedItem{items: [], requests: [next_page | episode_links]}
+  end
+
   def parse_item(response) do
     {:ok, document} = Floki.parse_document(response.body)
 
@@ -30,15 +51,10 @@ defmodule Wonk.Scraper do
       |> Floki.find("[data-source=\"oocDrop\"] div")
       |> Floki.text()
 
-    next =
-      document
-      |> Floki.find("[data-source=\"nextEpisode\"] a")
-      |> Floki.attribute("href")
-      # should only have one "next" link
-      |> Enum.at(0)
-      |> Crawly.Utils.build_absolute_url(response.request.url)
-      |> Crawly.Utils.request_from_url()
-
-    %Crawly.ParsedItem{items: [%{drop: drop}], requests: [next]}
+    %Crawly.ParsedItem{items: [%{drop: drop}], requests: []}
   end
+
+  defp is_episode?({"a", _attrs, [text | _]}), do: String.match?(text, ~r|^(\d+:)|)
+
+  defp href_from_link({"a", [{"href", href} | _], _text}), do: href
 end
