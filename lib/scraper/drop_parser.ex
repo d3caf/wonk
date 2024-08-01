@@ -1,7 +1,9 @@
 defmodule Wonk.Scraper.DropParser do
   @behaviour Crawly.Pipeline
 
+  alias Wonk.Drop
+
   @impl Crawly.Pipeline
-  def run(%{drop: ""}, state), do: {false, state}
-  def run(%{drop: drop}, state), do: {drop, state}
+  def run(%Drop{text: ""}, state), do: {false, state}
+  def run(drop, state), do: {drop, state}
 end

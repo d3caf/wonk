@@ -1,16 +1,20 @@
 defmodule Wonk.Scraper do
   use Crawly.Spider
+  alias Wonk.Drop
+
   @ep_index "https://knowledge-fight.fandom.com/wiki/Category:Episodes"
 
   @impl Crawly.Spider
   def override_settings do
     [
+      concurrent_requests_per_domain: 8,
       middlewares: [
         Crawly.Middlewares.DomainFilter
       ],
       pipelines: [
         {Wonk.Scraper.DropParser},
-        {Crawly.Pipelines.WriteToFile, extension: "txt", folder: "./static/crawls"}
+        {Crawly.Pipelines.CSVEncoder, fields: Drop.keys()},
+        {Crawly.Pipelines.WriteToFile, extension: "csv", folder: "./static/crawls"}
       ]
     ]
   end
@@ -38,23 +42,30 @@ defmodule Wonk.Scraper do
       |> Floki.find("a.category-page__pagination-next")
       |> Floki.attribute("href")
       |> Enum.at(0)
-      |> Crawly.Utils.request_from_url()
 
-    %Crawly.ParsedItem{items: [], requests: [next_page | episode_links]}
+    %Crawly.ParsedItem{
+      items: [],
+      requests:
+        if(next_page,
+          do: [Crawly.Utils.request_from_url(next_page) | episode_links],
+          else: episode_links
+        )
+    }
   end
 
   def parse_item(response) do
-    {:ok, document} = Floki.parse_document(response.body)
-
-    drop =
-      document
-      |> Floki.find("[data-source=\"oocDrop\"] div")
-      |> Floki.text()
-
-    %Crawly.ParsedItem{items: [%{drop: drop}], requests: []}
+    %Crawly.ParsedItem{
+      items: [
+        Drop.from_wiki_response(response)
+      ],
+      requests: []
+    }
   end
 
-  defp is_episode?({"a", _attrs, [text | _]}), do: String.match?(text, ~r|^(\d+:)|)
+  defp is_episode?({"a", _attrs, [contents | _]}) when is_binary(contents),
+    do: String.match?(contents, ~r|^(\d+:)|)
+
+  defp is_episode?(_), do: false
 
   defp href_from_link({"a", [{"href", href} | _], _text}), do: href
 end
