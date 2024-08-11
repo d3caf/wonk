@@ -3,7 +3,8 @@ defmodule WonkWeb.Drops do
   alias Wonk.Drop
 
   @external_resource latest_scrape_file =
-                       "static/crawls/**/*.json"
+                       :code.priv_dir(:wonk)
+                       |> Path.join("crawls/**/*.json")
                        |> Path.wildcard()
                        |> Enum.sort()
                        |> Enum.at(0)
