@@ -22,7 +22,7 @@ defmodule Wonk.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:crawly, "~> 0.17.2"},
+      {:crawly, "~> 0.17.2", only: :dev},
       {:floki, "~> 0.36.2"},
       {:bandit, "~> 1.5"},
       {:plug, "~> 1.16"},
