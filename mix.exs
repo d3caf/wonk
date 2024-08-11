@@ -14,6 +14,7 @@ defmodule Wonk.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
+      mod: {Wonk.Application, []},
       extra_applications: [:logger]
     ]
   end
@@ -22,7 +23,10 @@ defmodule Wonk.MixProject do
   defp deps do
     [
       {:crawly, "~> 0.17.2"},
-      {:floki, "~> 0.36.2"}
+      {:floki, "~> 0.36.2"},
+      {:bandit, "~> 1.5"},
+      {:plug, "~> 1.16"},
+      {:jason, "~> 1.4"}
     ]
   end
 end

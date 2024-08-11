@@ -13,8 +13,8 @@ defmodule Wonk.Scraper do
       ],
       pipelines: [
         {Wonk.Scraper.DropParser},
-        {Crawly.Pipelines.CSVEncoder, fields: Drop.keys()},
-        {Crawly.Pipelines.WriteToFile, extension: "csv", folder: "./static/crawls"}
+        {Crawly.Pipelines.JSONEncoder},
+        {Crawly.Pipelines.WriteToFile, extension: "json", folder: "./static/crawls"}
       ]
     ]
   end
