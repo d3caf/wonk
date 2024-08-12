@@ -13,6 +13,7 @@ defmodule WonkWeb.Router do
 
   get "/" do
     conn
+    |> Plug.Conn.put_resp_content_type("text/html")
     |> send_resp(
       200,
       render(WonkWeb.Drops.render())
